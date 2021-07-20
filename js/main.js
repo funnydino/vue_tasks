@@ -1,5 +1,7 @@
 "use strict";
 
+let tasks = [];
+
 Vue.component('header-nav', {
   props: ['header'],
   template: `<nav class="light-blue darken-4">
@@ -77,7 +79,12 @@ const newTask = {
     });
     this.time = M.Timepicker.init(this.$refs.timepicker, {
       twelveHour: false,
+      defaultTime: '12:00',
     });
+    setTimeout(() => {
+      this.time._updateTimeFromInput();
+      this.time.done();
+    }, 0);
   },
   methods: {
     submitHandler() {
@@ -85,7 +92,7 @@ const newTask = {
         title: this.title,
         description: this.description,
         id: Date.now(),
-        status: "active",
+        status: new Date(new Date(this.date.date).setHours(this.time.time.slice(0, 2), this.time.time.slice(3, 5))) > new Date() ? "active" : "outdated",
         date: this.date.date,
         time: this.time.time,
         dateTime: new Date(new Date(this.date.date).setHours(this.time.time.slice(0, 2), this.time.time.slice(3, 5))),
@@ -119,7 +126,7 @@ const editTask = {
     <div class="container row">
     <div class="col s9 card" v-if="task">
       <h1>{{ task.title }}</h1>
-      <form @submit.prevent="submitHandler">
+      <form class="pb-2" @submit.prevent="submitHandler">
         <div class="input-field">
           <span
             class="helper-text"
@@ -144,12 +151,18 @@ const editTask = {
             <label for="time">Время напоминания</label>
           </div>
         </div>
-        <div v-if="task.status !== 'completed'">
-          <button class="btn" type="submit" style="margin-right: 1rem">
-            Обновить напоминание
+        <div class="task-buttons">
+          <button v-if="task.status !== 'completed'" class="btn" type="submit" style="margin-right: 1rem">
+            Обновить
+            <i class="material-icons right">refresh</i>
           </button>
-          <button class="btn blue" type="button" @click="completeTask">
-            Завершить напоминание
+          <button v-if="task.status !== 'completed'" class="btn blue" type="button" @click="completeTask" style="margin-right: 1rem">
+            Завершить
+            <i class="material-icons right">done_all</i>
+          </button>
+          <button class="btn red" type="button" @click="deleteTask">
+            Удалить
+            <i class="material-icons right">delete</i>
           </button>
         </div>
       </form>
@@ -167,9 +180,12 @@ const editTask = {
     });
     this.time = M.Timepicker.init(this.$refs.timepicker, {
       twelveHour: false,
+      defaultTime: this.task.time ? this.task.time : '12:00',
     });
     setTimeout(() => {
       M.updateTextFields();
+      this.time._updateTimeFromInput();
+      this.time.done();
     }, 0);
   },
   methods: {
@@ -187,6 +203,10 @@ const editTask = {
       this.$store.dispatch("completeTask", this.task.id);
       this.$router.push("/list");
     },
+    deleteTask() {
+      this.$store.dispatch("deleteTask", this.task.id);
+      this.$router.push("/list");
+    },
   },
   destroyed() {
     if (this.date && this.date.destroy) {
@@ -200,13 +220,14 @@ const editTask = {
 
 const tasksList = {
   data: () => ({
-    filter: null
+    filter: null,
+    componentKey: 0,
   }),
   template: `<div class="tasks-list mt-2 mb-5">
   <div class="container card">
     <h1>Список напоминаний</h1>
-    <div class="row">
-      <div class="input-field col s6">
+    <div class="row" style="margin-bottom: 0">
+      <div class="input-field col s6" v-if="tasks.length">
         <select ref="select" v-model="filter">
           <option value="" disabled selected>Выберите вариант:</option>
           <option value="active">Активные</option>
@@ -220,7 +241,7 @@ const tasksList = {
       Очистить фильтр
     </button>
     <hr />
-    <table v-if="tasks.length">
+    <table v-if="tasks.length" :key="componentKey">
       <thead>
         <tr>
           <th>#</th>
@@ -234,16 +255,18 @@ const tasksList = {
       <tbody>
         <tr v-for="(task, index) of displayTasks" :key="task.id">
           <td>{{ index + 1 }}</td>
-          <td>{{ task.title }}</td>
+          <td class="title-cell">
+            <div class="title-text">{{ task.title }}</div>
+          </td>
           <td>
             {{ new Date(task.dateTime).toLocaleString() }}
           </td>
           <td class="description-cell">
             <div class="description-text">{{ task.description }}</div>
           </td>
-          <td v-if="task.status === 'outdated'">Просрочена</td>
-          <td v-else-if="task.status === 'active'">Активна</td>
-          <td v-else-if="task.status === 'completed'">Завершена</td>
+          <td v-if="task.status === 'outdated'" style="color: #f44336; font-weight: 500;">Просрочена</td>
+          <td v-else-if="task.status === 'active'" style="color: #26a69a; font-weight: 500;">Активна</td>
+          <td v-else-if="task.status === 'completed'" style="color: #2196f3; font-weight: 500;">Завершена</td>
           <td>
             <router-link
                 tag="button"
@@ -254,9 +277,21 @@ const tasksList = {
         </tr>
       </tbody>
     </table>
-    <p v-else>Нет напоминаний</p>
+    <p v-else class="mt-2 mb-2">Нет напоминаний</p>
     </div>
   </div>`,
+  beforeUpdate() {
+    this.$store.getters.tasks.map(task => {
+      if (new Date(task.dateTime) < new Date() && task.status !== 'completed') {
+        task.status = 'outdated';
+      };
+    });
+  },
+  created() {
+    setInterval(() => {
+      this.componentKey++
+    }, 60000)
+  },
   computed: {
     tasks() {
       return this.$store.getters.tasks;
@@ -270,6 +305,7 @@ const tasksList = {
       });
     },
   },
+  methods: {},
   mounted() {
     M.FormSelect.init(this.$refs.select);
   },
@@ -278,7 +314,7 @@ const tasksList = {
 const store = new Vuex.Store({
   state: {
     tasks: JSON.parse(localStorage.getItem('tasks') || '[]').map(task => {
-      if (new Date(task.dateTime) < new Date()) {
+      if (new Date(task.dateTime) < new Date() && task.status !== 'completed') {
         task.status = 'outdated'
       };
       return task;
@@ -318,6 +354,11 @@ const store = new Vuex.Store({
       state.tasks[index].status = 'completed'
       localStorage.setItem('tasks', JSON.stringify(state.tasks))
     },
+    deleteTask(state, id) {
+      const index = state.tasks.findIndex(t => t.id === id)
+      state.tasks.splice(index, 1)
+      localStorage.setItem('tasks', JSON.stringify(state.tasks))
+    },
   },
   actions: {
     createTask({
@@ -334,6 +375,11 @@ const store = new Vuex.Store({
       commit
     }, id) {
       commit('completeTask', id)
+    },
+    deleteTask({
+      commit
+    }, id) {
+      commit('deleteTask', id)
     },
   },
   modules: {},
@@ -376,8 +422,6 @@ const app = new Vue({
   },
   methods: {},
 });
-
-
 
 
 

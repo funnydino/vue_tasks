@@ -25,7 +25,11 @@
     <header>
       <header-nav :header="header" />
     </header>
-    <router-view />
+    <transition name="changeComp">
+      <!-- <keep-alive> -->
+      <router-view />
+      <!-- </keep-alive> -->
+    </transition>
   </div>
 </body>
 

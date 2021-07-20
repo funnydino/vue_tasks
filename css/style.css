@@ -3,3 +3,24 @@
 nav {
   padding: 0 2.5rem;
 }
+
+.changeComp-enter-active {
+  transition: opacity .25s, transform .25s;
+}
+
+.changeComp-enter {
+  opacity: 0;
+  transform: scale(.75);
+}
+
+.title-cell,
+.description-cell {
+  max-width: 200px;
+}
+
+.title-text,
+.description-text {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
