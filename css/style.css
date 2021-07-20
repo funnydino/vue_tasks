@@ -1,5 +1,15 @@
 /* Общие стили: */
 
+nav .brand-logo {
+  left: auto;
+  -webkit-transform: translateX(0);
+  transform: translateX(0);
+}
+
+.hide-on-med-and-down {
+  display: block !important;
+}
+
 nav {
   padding: 0 2.5rem;
 }
