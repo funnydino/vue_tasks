@@ -418,65 +418,7 @@ const app = new Vue({
   store,
   router,
   data: {
-    header: 'Задачи (тестовое задание)',
+    header: 'Напоминания',
   },
   methods: {},
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// LocalStorage:
-
-const toLocal = (tasksList) => {
-  localStorage.setItem([tasksList.toString()], JSON.stringify(tasks));
-};
-
-const fromLocal = (tasksList) => {
-  if (JSON.parse(localStorage[tasksList.toString()]).length != 0) {
-    const list = JSON.parse(localStorage[tasksList.toString()]);
-    for (let i = 0; i < list.length; i++) {
-      // createClient(list[i].id, list[i].surname, list[i].name, list[i].middlename, list[i].contacts, list[i].createDate, list[i].editDate);
-    };
-  };
-};
-
-// const loadTasks = async () => {
-//   try {
-//     const response = await fetch('https://europe-west1-st-testcase.cloudfunctions.net', {
-//       method: 'GET',
-//     });
-//     if (response.ok) {
-//       const data = await response.json();
-//       console.log(data);
-//     };
-//   } catch (e) {
-//     console.error(e);
-//   };
-// };
-
-// loadTasks();
